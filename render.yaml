@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: streamlit-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run home.py
+    envVars:
+      - key: STREAMLIT_SERVER_MAX_UPLOAD_SIZE
+        value: 200
+      - key: STREAMLIT_SERVER_TIMEOUT
+        value: 300
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: false
+    plan: starter
+    healthCheckPath: /_stcore/health
+    autoDeploy: false
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+      targetMemoryPercent: 80
