@@ -1123,3 +1123,476 @@ except Exception as e:
         """,
         unsafe_allow_html=True
     )
+
+# Módulo de Análisis de POP con Clustering
+class POPAnalyzer:
+    @staticmethod
+    def realizar_clustering_pop(df_ranking, num_clusters=3, min_partidos=5):
+        """
+        Realiza clustering sobre los datos de jugadores basado en la métrica POP
+        y otros KPIs relacionados, devolviendo visualizaciones y análisis.
+        
+        Args:
+            df_ranking (DataFrame): DataFrame con los datos de jugadores
+            num_clusters (int): Número de clusters a generar
+            min_partidos (int): Número mínimo de partidos para considerar a un jugador
+            
+        Returns:
+            dict: Diccionario con figuras y resultados del clustering
+        """
+        import numpy as np
+        from sklearn.cluster import KMeans
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.decomposition import PCA
+        import plotly.graph_objects as go
+        import plotly.express as px
+        from plotly.subplots import make_subplots
+        
+        # Filtrar jugadores con suficientes partidos y que tengan valor de POP
+        df_filtrado = df_ranking[
+            (df_ranking['Número de Partidos'] >= min_partidos) & 
+            (~df_ranking['POP'].isna())
+        ].copy()
+        
+        # Si no hay suficientes jugadores, retornar mensaje
+        if len(df_filtrado) < num_clusters * 2:
+            return {"error": f"No hay suficientes jugadores con datos de POP (mínimo {num_clusters*2} necesarios)"}
+            
+        # Seleccionar características para el clustering
+        features = ['POP', 'KPI Rendimiento', 'KPI Progresión', 'KPI Peligro Generado']
+        
+        # Asegurarse de que todas las características existan
+        valid_features = [f for f in features if f in df_filtrado.columns]
+        
+        if len(valid_features) < 2:
+            return {"error": "No hay suficientes características válidas para el clustering"}
+            
+        # Preparar datos para clustering
+        X = df_filtrado[valid_features].values
+        
+        # Normalizar datos
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        # Aplicar K-means
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
+        df_filtrado['cluster'] = kmeans.fit_predict(X_scaled)
+        
+        # Obtener centroides
+        centroids = scaler.inverse_transform(kmeans.cluster_centers_)
+        
+        # Determinar etiquetas significativas para los clusters
+        # Ordenar clusters por valor promedio de POP
+        pop_index = valid_features.index('POP')
+        cluster_pop_values = {}
+        
+        for i in range(num_clusters):
+            cluster_pop_values[i] = centroids[i][pop_index]
+            
+        # Ordenar clusters por valor de POP (de mayor a menor)
+        sorted_clusters = sorted(cluster_pop_values.items(), key=lambda x: x[1], reverse=True)
+        
+        # Asignar etiquetas
+        cluster_labels = {}
+        for i, (cluster_id, _) in enumerate(sorted_clusters):
+            if i == 0:
+                cluster_labels[cluster_id] = "Alto POP"
+            elif i == num_clusters - 1:
+                cluster_labels[cluster_id] = "Bajo POP"
+            else:
+                cluster_labels[cluster_id] = "Medio POP"
+        
+        # Crear mapa de colores para los clusters
+        cluster_colors = {
+            "Alto POP": "#0067B2",  # Azul Alavés
+            "Medio POP": "#53A2D9",  # Azul medio
+            "Bajo POP": "#B0D0E9"   # Azul claro
+        }
+        
+        # Añadir etiquetas de cluster al DataFrame
+        df_filtrado['cluster_label'] = df_filtrado['cluster'].map(cluster_labels)
+        df_filtrado['cluster_color'] = df_filtrado['cluster_label'].map(cluster_colors)
+        
+        # Crear visualizaciones
+        
+        # 1. Gráfico de dispersión 3D con PCA si hay más de 2 características
+        if len(valid_features) > 2:
+            pca = PCA(n_components=3)
+            X_pca = pca.fit_transform(X_scaled)
+            
+            # Crear un nuevo DataFrame con los componentes principales
+            df_pca = pd.DataFrame({
+                'PC1': X_pca[:, 0],
+                'PC2': X_pca[:, 1],
+                'PC3': X_pca[:, 2],
+                'Cluster': df_filtrado['cluster_label'],
+                'Color': df_filtrado['cluster_color'],
+                'Jugador': df_filtrado['Jugador'],
+                'Equipo': df_filtrado['Equipo'],
+                'POP': df_filtrado['POP'],
+                'KPI Rendimiento': df_filtrado['KPI Rendimiento']
+            })
+            
+            # Crear gráfico 3D
+            fig_3d = px.scatter_3d(
+                df_pca, 
+                x='PC1', y='PC2', z='PC3',
+                color='Cluster',
+                color_discrete_map={label: color for label, color in cluster_colors.items()},
+                hover_data=['Jugador', 'Equipo', 'POP', 'KPI Rendimiento'],
+                labels={'PC1': 'Componente 1', 'PC2': 'Componente 2', 'PC3': 'Componente 3'},
+                title='Agrupación de jugadores por POP (Análisis de Componentes Principales)'
+            )
+            
+            # Personalizar gráfico
+            fig_3d.update_layout(
+                scene=dict(
+                    xaxis=dict(backgroundcolor='rgba(0, 0, 0, 0)', color='white'),
+                    yaxis=dict(backgroundcolor='rgba(0, 0, 0, 0)', color='white'),
+                    zaxis=dict(backgroundcolor='rgba(0, 0, 0, 0)', color='white')
+                ),
+                paper_bgcolor='rgba(25, 25, 35, 0.95)',
+                plot_bgcolor='rgba(25, 25, 35, 0.95)',
+                font=dict(color='white')
+            )
+        else:
+            fig_3d = None
+        
+        # 2. Gráfico de dispersión POP vs KPI Rendimiento
+        fig_scatter = px.scatter(
+            df_filtrado, 
+            x='POP', 
+            y='KPI Rendimiento',
+            color='cluster_label',
+            color_discrete_map=cluster_colors,
+            hover_data=['Jugador', 'Equipo', 'Demarcación', 'Número de Partidos'],
+            text='Jugador',
+            size='Número de Partidos',
+            size_max=20,
+            opacity=0.8,
+            title='Relación entre POP y KPI Rendimiento por Grupos'
+        )
+        
+        # Personalizar el gráfico
+        fig_scatter.update_layout(
+            xaxis=dict(title='POP', gridcolor='rgba(255, 255, 255, 0.1)', zerolinecolor='rgba(255, 255, 255, 0.2)'),
+            yaxis=dict(title='KPI Rendimiento', gridcolor='rgba(255, 255, 255, 0.1)', zerolinecolor='rgba(255, 255, 255, 0.2)'),
+            plot_bgcolor='rgba(25, 25, 35, 0.95)',
+            paper_bgcolor='rgba(25, 25, 35, 0.95)',
+            font=dict(color='white'),
+            legend_title_text='Grupo POP',
+            hovermode='closest'
+        )
+        
+        # Añadir texto solo para algunos puntos destacados (top 5 por POP)
+        fig_scatter.update_traces(
+            textposition='top center',
+            textfont=dict(color='rgba(255, 255, 255, 0.8)', size=10)
+        )
+        
+        # Filtrar para mostrar texto solo en los 5 jugadores con mayor POP
+        for i, t in enumerate(fig_scatter.data):
+            t.textfont.color = cluster_colors[t.name]
+            
+            # Crear máscara para mostrar solo nombres de los top 5 por POP en cada cluster
+            top_indices = df_filtrado[df_filtrado['cluster_label'] == t.name].sort_values('POP', ascending=False).head(3).index
+            top_indices_list = top_indices.tolist()
+            
+            # Crear una nueva lista de textos donde solo los top tienen texto
+            text_list = []
+            for idx in df_filtrado[df_filtrado['cluster_label'] == t.name].index:
+                if idx in top_indices_list:
+                    text_list.append(df_filtrado.loc[idx, 'Jugador'])
+                else:
+                    text_list.append("")
+                
+            # Asignar los textos actualizados
+            t.text = text_list
+        
+        # 3. Gráfico de radar para comparar características de clusters
+        # Preparar datos para el radar chart
+        categories = valid_features + [valid_features[0]]  # Repetir el primero para cerrar el polígono
+        
+        fig_radar = go.Figure()
+        
+        for cluster_id, label in cluster_labels.items():
+            cluster_values = centroids[cluster_id]
+            
+            # Normalizar valores para el radar chart (de 0 a 1)
+            value_min = np.min(centroids, axis=0)
+            value_max = np.max(centroids, axis=0)
+            normalized_values = (cluster_values - value_min) / (value_max - value_min)
+            
+            # Añadir el primer valor al final para cerrar el polígono
+            radar_values = list(normalized_values) + [normalized_values[0]]
+            
+            fig_radar.add_trace(go.Scatterpolar(
+                r=radar_values,
+                theta=categories,
+                fill='toself',
+                name=label,
+                line=dict(color=cluster_colors[label]),
+                fillcolor=cluster_colors[label].replace(')', ', 0.2)').replace('rgb', 'rgba')
+            ))
+        
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 1],
+                    showticklabels=False,
+                    gridcolor='rgba(255, 255, 255, 0.15)'
+                ),
+                angularaxis=dict(
+                    color='white',
+                    gridcolor='rgba(255, 255, 255, 0.15)'
+                ),
+                bgcolor='rgba(25, 25, 35, 0.95)'
+            ),
+            paper_bgcolor='rgba(25, 25, 35, 0.95)',
+            plot_bgcolor='rgba(25, 25, 35, 0.95)',
+            font=dict(color='white'),
+            title={
+                'text': 'Perfil de características por grupo de POP',
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(size=20, color='white')
+            },
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                y=-0.1,
+                x=0.5,
+                xanchor='center'
+            )
+        )
+        
+        # 4. Estadísticas por cluster
+        stats_por_cluster = {}
+        for cluster_id, label in cluster_labels.items():
+            cluster_df = df_filtrado[df_filtrado['cluster'] == cluster_id]
+            
+            stats = {
+                'Jugadores': len(cluster_df),
+                'POP Promedio': cluster_df['POP'].mean(),
+                'KPI Rendimiento Promedio': cluster_df['KPI Rendimiento'].mean(),
+                'Jugadores Destacados': cluster_df.nlargest(3, 'POP')['Jugador'].tolist(),
+                'Equipos': cluster_df['Equipo'].value_counts().nlargest(3).to_dict(),
+                'Demarcaciones': cluster_df['Demarcación'].value_counts().to_dict()
+            }
+            stats_por_cluster[label] = stats
+        
+        # Crear un DataFrame con los jugadores top de cada cluster
+        top_jugadores_por_cluster = pd.DataFrame()
+        
+        for cluster_id, label in cluster_labels.items():
+            cluster_df = df_filtrado[df_filtrado['cluster'] == cluster_id]
+            top_jugadores = cluster_df.nlargest(5, 'POP')[['Jugador', 'Equipo', 'Demarcación', 'POP', 'KPI Rendimiento', 'Número de Partidos']]
+            top_jugadores['Grupo POP'] = label
+            top_jugadores_por_cluster = pd.concat([top_jugadores_por_cluster, top_jugadores])
+        
+        # Ordenar por POP descendente
+        top_jugadores_por_cluster = top_jugadores_por_cluster.sort_values('POP', ascending=False)
+        
+        # Retornar resultados
+        return {
+            "fig_3d": fig_3d,
+            "fig_scatter": fig_scatter,
+            "fig_radar": fig_radar,
+            "stats_por_cluster": stats_por_cluster,
+            "top_jugadores": top_jugadores_por_cluster,
+            "df_clusters": df_filtrado
+        }
+
+# Añadir la sección de análisis POP después de las visualizaciones anteriores
+st.markdown(
+    """
+    <div style="
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #FFFFFF, transparent);
+        margin: 50px 0 30px 0;
+    "></div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Título de la sección de POP
+st.markdown(
+    """
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="font-size: 2em;">🔍 Análisis Avanzado de Pases de Profundidad (POP)</h2>
+        <p style="color: rgba(255,255,255,0.7); font-size: 1.1em;">
+            Descubra patrones y agrupaciones de jugadores basados en su capacidad para realizar pases de profundidad
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Mostrar estadísticas de POP
+# Usamos el dataframe que ya tenemos cargado (ranking_por_liga)
+if 'usuario' in st.session_state and df is not None:
+    # Obtener ranking para clustering
+    ranking_por_liga = DataAnalyzer.obtener_ranking_por_liga(
+        df, 
+        liga_seleccionada=liga_seleccionada, 
+        demarcacion_seleccionada=demarcacion_seleccionada, 
+        equipo_seleccionado=equipo_seleccionado
+    )
+    
+    # Filtrar por número mínimo de partidos
+    ranking_por_liga = ranking_por_liga[ranking_por_liga['Número de Partidos'] >= min_partidos]
+    
+    # Verificar si hay datos de POP
+    if 'POP' in ranking_por_liga.columns:
+            # Columnas para configuración
+            col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        num_clusters = st.slider('Número de grupos', min_value=2, max_value=5, value=3, 
+                              help="Seleccione el número de grupos para el algoritmo de clustering")
+    
+    with col2:
+        min_partidos_pop = st.slider('Mínimo de partidos', min_value=1, max_value=10, value=3,
+                                 help="Número mínimo de partidos para incluir un jugador en el análisis")
+    
+    with col3:
+        st.markdown(
+            """
+            <div style="background-color: rgba(0, 103, 178, 0.1); 
+                        border-left: 3px solid #0067B2;
+                        padding: 10px;
+                        border-radius: 3px;
+                        margin-top: 25px;">
+                <b>POP</b>: Pase de Oportunidad en Profundidad
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    # Realizar análisis de clustering
+    with st.spinner('Realizando análisis avanzado de POP...'):
+        resultados_pop = POPAnalyzer.realizar_clustering_pop(
+            ranking_por_liga, 
+            num_clusters=num_clusters, 
+            min_partidos=min_partidos_pop
+        )
+    
+    # Verificar si hay error
+    if "error" in resultados_pop:
+        st.error(resultados_pop["error"])
+    else:
+        # Mostrar las visualizaciones
+        
+        # 1. Visualización principal - Scatter plot
+        st.plotly_chart(resultados_pop["fig_scatter"], use_container_width=True)
+        
+        # 2. Características de los grupos - Radar plot
+        st.plotly_chart(resultados_pop["fig_radar"], use_container_width=True)
+        
+        # 3. Visualización 3D si está disponible
+        if resultados_pop["fig_3d"] is not None:
+            with st.expander("Ver visualización 3D de los grupos", expanded=False):
+                st.plotly_chart(resultados_pop["fig_3d"], use_container_width=True)
+        
+        # 4. Tabla de jugadores top por grupo
+        st.markdown("### 📊 Jugadores destacados por grupo de POP")
+        
+        st.markdown(
+            """
+            <div style="margin-bottom: 15px;">
+                <p style="color: rgba(255,255,255,0.7);">
+                    La tabla muestra los jugadores más destacados de cada grupo según su métrica POP.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Crear columnas para la tabla
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            # Mostrar tabla sin estilo personalizado para evitar errores
+            st.dataframe(
+                resultados_pop["top_jugadores"], 
+                use_container_width=True,
+                column_config={
+                    'POP': st.column_config.NumberColumn(format="%.3f"),
+                    'KPI Rendimiento': st.column_config.NumberColumn(format="%.2f"),
+                    'Grupo POP': st.column_config.TextColumn(width="medium"),
+                }
+            )
+        
+        with col2:
+            # Añadir estadísticas resumidas
+            stats = resultados_pop["stats_por_cluster"]
+            
+            for grupo, datos in stats.items():
+                color = ""
+                if grupo == "Alto POP":
+                    color = "#0067B2"
+                elif grupo == "Medio POP":
+                    color = "#53A2D9"
+                else:
+                    color = "#B0D0E9"
+                
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: rgba(25, 25, 35, 0.8);
+                        border-radius: 10px;
+                        border-left: 4px solid {color};
+                        padding: 10px;
+                        margin-bottom: 10px;
+                    ">
+                        <h4 style="margin: 0 0 8px 0; color: {color};">{grupo}</h4>
+                        <p style="margin: 3px 0; font-size: 0.9em;">
+                            <b>Jugadores:</b> {datos['Jugadores']}
+                        </p>
+                        <p style="margin: 3px 0; font-size: 0.9em;">
+                            <b>POP promedio:</b> {datos['POP Promedio']:.3f}
+                        </p>
+                        <p style="margin: 3px 0; font-size: 0.9em;">
+                            <b>KPI promedio:</b> {datos['KPI Rendimiento Promedio']:.2f}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        # 5. Análisis y conclusiones
+        st.markdown(
+            """
+            <div style="
+                background: linear-gradient(90deg, rgba(0, 103, 178, 0.1) 0%, rgba(0, 103, 178, 0.05) 100%);
+                border-radius: 10px;
+                padding: 20px;
+                margin-top: 30px;
+                border: 1px solid rgba(0, 103, 178, 0.2);
+            ">
+                <h3 style="margin-top: 0; color: white;">💡 Análisis y Conclusiones</h3>
+                
+                <p style="color: rgba(255,255,255,0.8);">
+                    El análisis de <b>Pases de Oportunidad en Profundidad (POP)</b> revela patrones significativos 
+                    en la capacidad de los jugadores para realizar pases que generan ventajas ofensivas.
+                </p>
+                
+                <ul style="color: rgba(255,255,255,0.8);">
+                    <li><b>Grupo Alto POP:</b> Jugadores con excepcional visión de juego y precisión en pases que rompen líneas defensivas.</li>
+                    <li><b>Grupo Medio POP:</b> Jugadores con buena capacidad de pase pero menos consistentes en la creación de peligro.</li>
+                    <li><b>Grupo Bajo POP:</b> Jugadores que priorizan la seguridad en el pase o cuya función táctica no les exige pases en profundidad.</li>
+                </ul>
+                
+                <p style="color: rgba(255,255,255,0.8);">
+                    La correlación entre POP y otros KPIs de rendimiento sugiere que los jugadores con alta capacidad 
+                    de pase en profundidad tienden a destacar también en otras métricas ofensivas.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+else:
+    st.warning("No se encontraron datos de POP para realizar el análisis de clustering.")

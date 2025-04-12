@@ -1,13 +1,13 @@
-/* General page styles */
+/* General page styles - Colores Alavés */
 .stApp {
-    background-color: #0E1117;
+    background-color: #0A1D3B; /* Azul oscuro Alavés */
 }
 
 .st-emotion-cache-16idsys, .st-emotion-cache-1cypcdb {
-    background-color: #0E1117;
+    background-color: #0A1D3B;
 }
 
-/* Text colors */
+/* Text colors - Mayor contraste */
 .st-emotion-cache-q8sbsg p, .st-emotion-cache-q8sbsg p:first-child, .st-emotion-cache-10trblm,
 div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     color: white !important;
@@ -25,14 +25,16 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 2px solid #0067B2; /* Borde azul Alavés */
 }
 
 /* Team info */
 .team-info-card {
-    background-color: white;
+    background-color: #FFFFFF;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
+    border-left: 5px solid #0067B2; /* Borde lateral azul Alavés */
 }
 
 .team-info-header {
@@ -46,22 +48,23 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 }
 
 .team-name {
-    color: #666666;
+    color: #0067B2; /* Azul Alavés */
     font-size: 25px;
     font-weight: bold;
 }
 
 /* Stats */
 .stat-container {
-    background-color: #f8f9fa;
+    background-color: #FFFFFF;
     border-radius: 5px;
     padding: 15px;
     margin-bottom: 10px;
-    opacity: 0.9;
+    opacity: 0.95;
+    border-bottom: 3px solid #0067B2; /* Borde inferior azul Alavés */
 }
 
 .stat-label {
-    color: #666666;
+    color: #0A1D3B; /* Azul oscuro Alavés */
     font-size: 10px;
     font-weight: bold;
     font-family: monospace;
@@ -69,7 +72,7 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 }
 
 .stat-value {
-    color: #4BB3FD;
+    color: #0067B2; /* Azul Alavés */
     font-size: 16px;
     font-weight: bold;
     font-family: sans-serif;
@@ -78,20 +81,23 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 
 /* Plot styling */
 .plot-container {
-    background-color: #0E1117;
+    background-color: #FFFFFF;
     border-radius: 10px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #0067B2; /* Borde azul Alavés */
 }
 
 .plot-title {
-    color: white;
+    color: #0067B2; /* Azul Alavés */
     font-size: 14px;
     font-weight: bold;
     text-align: center;
     margin-bottom: 1rem;
     padding: 0.5rem;
+    background-color: rgba(0, 103, 178, 0.1); /* Fondo sutilmente azulado */
+    border-radius: 5px;
 }
 
 /* Image containers */
@@ -101,6 +107,7 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     max-width: 100%;
     height: auto;
     border-radius: 5px;
+    border: 1px solid #E5E5E5; /* Borde sutil para imágenes */
 }
 
 /* Grid layout */
@@ -117,7 +124,7 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     justify-content: center;
     align-items: center;
     height: 200px;
-    background-color: rgba(14, 17, 23, 0.8);
+    background-color: rgba(10, 29, 59, 0.8); /* Azul oscuro Alavés con transparencia */
     border-radius: 10px;
 }
 
@@ -128,7 +135,7 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #0E1117;
+    background-color: #0A1D3B; /* Azul oscuro Alavés */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -163,11 +170,12 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 
 /* Filter section */
 .filter-section {
-    background-color: #262730;
+    background-color: #122547; /* Azul medio Alavés */
     padding: 1.5rem;
     border-radius: 10px;
     margin-bottom: 1.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Responsive design */
@@ -187,7 +195,7 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 
 /* Chart container specific styles */
 .chart-container {
-    background-color: #1E1E1E;
+    background-color: #FFFFFF;
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
@@ -201,16 +209,16 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 }
 
 ::-webkit-scrollbar-track {
-    background: #1E1E1E;
+    background: #0A1D3B; /* Azul oscuro Alavés */
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #4BB3FD;
+    background: #0067B2; /* Azul Alavés */
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #3994d9;
+    background: #004C8A; /* Azul Alavés más oscuro */
 }
 
 /* Estilos para el encabezado del equipo */
@@ -219,11 +227,12 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background-color: #1E1E1E;
+    background-color: #FFFFFF;
     border-radius: 8px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-top: 4px solid #0067B2; /* Borde superior azul Alavés */
 }
 
 .team-info {
@@ -235,14 +244,14 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
 .team-name {
     font-size: 2.5rem;
     font-weight: bold;
-    color: #ffffff;
+    color: #0A1D3B; /* Azul oscuro Alavés */
     margin-bottom: 0.3rem;
 }
 
 .team-season {
     font-size: 1.7rem;
     font-weight: bold;
-    color: #4BB3FD;
+    color: #0067B2; /* Azul Alavés */
 }
 
 .kpi-boxes {
@@ -256,7 +265,7 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #4BB3FD 0%, #1E90FF 100%);
+    background: linear-gradient(135deg, #0067B2 0%, #004C8A 100%); /* Gradiente azul Alavés */
     border-radius: 8px;
     padding: 1rem;
     min-width: 180px;
@@ -281,6 +290,53 @@ div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
     font-weight: bold;
     color: white;
     text-align: center;
+}
+
+/* Estilo Streamlit específico para inputs */
+.stTextInput label, .stNumberInput label, .stSelectbox label {
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.stTextInput input, .stNumberInput input {
+    background-color: white !important;
+    color: #0A1D3B !important;
+    border: 1px solid #0067B2 !important;
+}
+
+.stSelectbox > div > div {
+    background-color: white !important;
+    color: #0A1D3B !important;
+    border: 1px solid #0067B2 !important;
+}
+
+/* Estilo para botones */
+.stButton button {
+    background-color: #0067B2 !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton button:hover {
+    background-color: #004C8A !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Estilo para dataframe */
+.stDataFrame {
+    background-color: white !important;
+    color: #0A1D3B !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
+.stDataFrame th {
+    background-color: #0067B2 !important;
+    color: white !important;
+    font-weight: bold !important;
 }
 
 /* Ajustes responsive */
